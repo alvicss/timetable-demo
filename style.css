@@ -1,0 +1,1089 @@
+/* ============================================================
+   隤脰”?亥岷蝟餌絞 - 銝餅見撘?   style.css
+   ============================================================ */
+
+/* ?? Google Font ???????????????????????????????????????????? */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+
+/* ?? CSS 霈 ??????????????????????????????????????????????? */
+:root {
+    /* 淺色主題 (預設) - 商務簡潔 */
+    --app-page-bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --card-bdr: #e4e7ed;
+    --accent: #2563eb;
+    --accent-dim: rgba(37, 99, 235, 0.1);
+    --accent2: #1e50bc;
+    --text: #303133;
+    --text-primary: #111827;
+    --text-dim: #606266;
+    --danger: #ef4444;
+    --success: #22c55e;
+    --warn: #eab308;
+    --card-radius: 8px;
+    --transition: 0.3s ease;
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+html.dark {
+    /* 深色主題 - 工業深色 */
+    --app-page-bg: #141414;
+    --card-bg: #1d1e1f;
+    --card-bdr: #414243;
+    --accent: #409eff;
+    --accent-dim: rgba(64, 158, 255, 0.15);
+    --accent2: #337ecc;
+    --text: #e5eaf3;
+    --text-primary: #f8f9fa;
+    --text-dim: #a3a6ad;
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ?? Reset & Base ??????????????????????????????????????????? */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: 'Noto Sans TC', sans-serif;
+    min-height: 100vh;
+    background-color: var(--app-page-bg);
+    color: var(--text);
+    overflow-x: hidden;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+/* ?€?€ ?餌??∠? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€ */
+.glass-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-bdr);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-md);
+    transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition);
+}
+
+/* ?? 閬?摰孵 ??????????????????????????????????????????????? */
+.view {
+    position: relative;
+    z-index: 1;
+    display: none;
+    opacity: 0;
+    transition: opacity var(--transition);
+}
+.view.active {
+    display: flex;
+    animation: fadeIn var(--transition) forwards;
+}
+.view.result-active {
+    display: block;
+    animation: fadeIn var(--transition) forwards;
+}
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+/* ?? ?餃 & ?亥岷閬? (?蝵桐葉) ????????????????????????????? */
+#startView, #loginView, #queryView {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem 1.25rem;
+}
+#startView {
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+/* ?? ?餃?∠? ??????????????????????????????????????????????? */
+.login-card {
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem 2rem;
+}
+
+.start-card {
+    width: 100%;
+    max-width: 620px;
+    padding: 2.5rem 2rem;
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+.login-logo .logo-icon {
+    width: 64px; height: 64px;
+    background: var(--accent);
+    color: #ffffff;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 4px 12px var(--accent-dim);
+}
+.login-logo h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+}
+.login-logo p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 0.2rem;
+}
+
+/* ?? 銵典?辣 ??????????????????????????????????????????????? */
+.form-group { margin-bottom: 1.1rem; }
+.form-group label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.form-control {
+    width: 100%;
+    padding: 0.65rem 0.9rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.6rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    outline: none;
+}
+.form-control:focus {
+    border-color: var(--accent);
+    background: var(--card-bg);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.form-control::placeholder { color: var(--text-dim); }
+.form-control option { background: var(--card-bg); color: var(--text-primary); }
+
+/* ── 教師姓名智慧篩選下拉（依師查科目分頁用）─────────────────── */
+.autocomplete-wrap { position: relative; }
+.autocomplete-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: var(--card-bg);
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.6rem;
+    box-shadow: var(--shadow-md);
+    z-index: 50;
+}
+.autocomplete-list.show { display: block; }
+.autocomplete-item {
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+.autocomplete-item:hover,
+.autocomplete-item.highlighted { background: var(--accent-dim); }
+.autocomplete-item mark {
+    background: transparent;
+    color: var(--accent);
+    font-weight: 700;
+}
+.autocomplete-empty {
+    padding: 0.55rem 0.9rem;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* ?? ?? ??????????????????????????????????????????????????? */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.65rem 1.4rem;
+    border: none;
+    border-radius: 0.6rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    text-decoration: none;
+    white-space: nowrap;
+}
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: var(--accent2);
+}
+
+.btn-success {
+    background: var(--success);
+    color: #fff;
+}
+.btn-success:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: #15803d; /* slightly darker green for hover */
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--card-bdr);
+}
+.btn-ghost:hover {
+    background: var(--card-bdr);
+    color: var(--text);
+    border-color: var(--card-bdr);
+}
+
+.btn-print {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+html.dark .btn-print {
+    border-color: rgba(64, 158, 255, 0.3);
+}
+.btn-print:hover {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+/* ── 主題切換按鈕圖示控制 (SVG 專用) ───────────────────────────── */
+html.dark .sun-icon {
+    display: inline-block !important;
+}
+html.dark .moon-icon {
+    display: none !important;
+}
+html:not(.dark) .sun-icon {
+    display: none !important;
+}
+html:not(.dark) .moon-icon {
+    display: inline-block !important;
+}
+
+/* ── 純圖示按鈕 (Icon-only Buttons) ───────────────────────────── */
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.btn-icon svg {
+    margin-right: 0 !important;
+}
+
+.btn-block { width: 100%; }
+
+/* ── 首頁教學與匯入區 ───────────────────────────────────────── */
+.guide-box {
+    background: var(--app-page-bg);
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.guide-box h2 {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.6rem;
+}
+.guide-steps {
+    padding-left: 1.25rem;
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.7;
+}
+.guide-steps li + li {
+    margin-top: 0.25rem;
+}
+.privacy-note {
+    margin-top: 0.75rem;
+    color: var(--accent);
+    font-size: 0.88rem;
+    line-height: 1.6;
+}
+.start-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* ── 原作者致謝 footer ─────────────────────────────────────── */
+.site-footer {
+    padding: 0 1rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    text-align: center;
+    pointer-events: none;
+}
+.site-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    pointer-events: auto;
+}
+.site-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ?? Spinner ???????????????????????????????????????????????? */
+.spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+}
+.spinner.show { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ?? 霅血?閮 ??????????????????????????????????????????????? */
+.alert {
+    padding: 0.7rem 1rem;
+    border-radius: 0.6rem;
+    font-size: 0.875rem;
+    margin-top: 0.75rem;
+    display: none;
+}
+.alert.show { display: block; }
+.alert-danger  { background: rgba(248,113,113,0.12); border: 1px solid rgba(248,113,113,0.3); color: var(--danger); }
+.alert-warning { background: rgba(251,191,36,0.12);  border: 1px solid rgba(251,191,36,0.3);  color: var(--warn);   }
+.alert-info    { background: rgba(56,189,248,0.12);  border: 1px solid rgba(56,189,248,0.3);  color: var(--accent); }
+
+/* ── 提示模板彈窗 ───────────────────────────────────────────── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.45);
+}
+.modal-overlay.show {
+    display: flex;
+}
+.template-modal-card {
+    width: min(760px, 100%);
+    max-height: min(90vh, 760px);
+    padding: 1.25rem;
+    overflow-y: auto;
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.modal-header h2 {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+}
+.modal-content h3 {
+    color: var(--text-primary);
+    font-size: 0.98rem;
+    margin: 1rem 0 0.5rem;
+}
+.prompt-template {
+    width: 100%;
+    min-height: 340px;
+    padding: 0.85rem;
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.6rem;
+    background: var(--app-page-bg);
+    color: var(--text-primary);
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    resize: vertical;
+    outline: none;
+}
+.copy-status {
+    min-height: 1.4rem;
+    margin-top: 0.65rem;
+    color: var(--accent);
+    font-size: 0.88rem;
+}
+
+/* ?? ??蝺?????????????????????????????????????????????????? */
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--card-bdr);
+}
+
+/* ?? ?亥岷?∠? ??????????????????????????????????????????????? */
+.query-card {
+    width: 100%;
+    max-width: 480px;
+    padding: 2.5rem 2rem;
+}
+.query-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+}
+
+/* ?? 蝯?閬? ??????????????????????????????????????????????? */
+#resultView {
+    padding: 1.5rem 1rem 3rem;
+}
+.result-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ── 操作列 (統一左側與課表對齊) ────────────────────────────────── */
+.action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+}
+.action-bar-left { display: flex; align-items: center; gap: 0.75rem; }
+.action-bar-right { display: flex; gap: 0.5rem; }
+
+/* ?€?€ 隤脰”璅? ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€ */
+.schedule-title {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    color: var(--accent);
+}
+
+/* ?? 隤脰”銵冽 ??????????????????????????????????????????????? */
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    text-align: center;
+}
+.schedule-table th, .schedule-table td {
+    border: 1px solid var(--card-bdr);
+    padding: 0.6rem 0.3rem;
+    vertical-align: middle;
+}
+.schedule-table thead th {
+    background: var(--app-page-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+.th-period {
+    width: 80px;
+}
+.schedule-table tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+html.dark .schedule-table tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+.schedule-table tbody tr:hover {
+    background: var(--accent-dim);
+}
+
+/* 節次cell */
+.td-period {
+    background: rgba(0, 0, 0, 0.02);
+    color: var(--text-dim);
+    white-space: nowrap;
+}
+html.dark .td-period {
+    background: rgba(255, 255, 255, 0.02);
+}
+.period-num {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+.period-time {
+    font-size: 0.75rem;
+    line-height: 1.3;
+    margin-top: 0.2rem;
+}
+
+/* ── 深淺色切換按鈕 ─────────────────────────────────────────── */
+.theme-toggle-btn {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    padding: 0;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-bdr);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: transform 0.2s ease, background-color var(--transition), border-color var(--transition);
+}
+.theme-toggle-btn:hover {
+    transform: scale(1.08);
+}
+
+/* ── 課表 Cell 整理 ──────────────────────────────────────────── */
+.td-cell {
+    padding: 0.6rem 0.4rem;
+    min-height: 72px;
+    height: auto;
+    vertical-align: top;
+    transition: background-color 0.15s ease;
+}
+.td-cell:hover {
+    background-color: var(--accent-dim) !important;
+}
+
+.cell-subject {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+    line-height: 1.3;
+}
+
+.cell-items-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+}
+
+.cell-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 9px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.2;
+}
+
+html.dark .cell-link {
+    border-color: rgba(64, 158, 255, 0.25);
+}
+
+.cell-link:hover {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px var(--accent-dim);
+}
+
+/* 蝛箏? */
+.td-empty {
+    background: transparent;
+}
+
+/* ?€?€ Loading Overlay ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€ */
+#loadingOverlay {
+    position: fixed;
+    inset: 0;
+    background: var(--app-page-bg);
+    opacity: 0.95;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 100;
+    display: none;
+}
+#loadingOverlay.show { display: flex; }
+#loadingOverlay .big-spinner {
+    width: 48px; height: 48px;
+    border: 3px solid rgba(56,189,248,0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+#loadingOverlay p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* ?? ???內 chip (autocomplete) ??????????????????????????? */
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+    min-height: 0;
+}
+.chip {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    border: 1px solid rgba(56,189,248,0.25);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.chip:hover {
+    background: rgba(56,189,248,0.3);
+    transform: translateY(-1px);
+}
+
+/* ?? ?餃?? ??????????????????????????????????????????????? */
+.logout-btn {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 0.4rem;
+}
+
+/* ?? ??撌亙憿?????????????????????????????????????????????? */
+.hidden { display: none !important; }
+
+/* ?? ?亥岷璅???????????????????????????????????????????????? */
+.query-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+.query-header h2 { margin: 0; font-size: 1.2rem; }
+
+.semester-badge {
+    font-size: 0.72rem;
+    color: var(--accent);
+    background: var(--accent-dim);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    margin-top: 0.3rem;
+    display: inline-block;
+}
+
+/* ?€?€ ????Tab ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€ */
+.tab-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.6rem;
+    padding: 0.3rem;
+}
+.tab-btn {
+    flex: 1;
+    padding: 0.55rem 0.5rem;
+    border: none;
+    border-radius: 0.45rem;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+.tab-btn:hover { color: var(--text); background: var(--app-page-bg); }
+.tab-btn.active {
+    background: rgba(56,189,248,0.15);
+    color: var(--accent);
+    box-shadow: 0 2px 8px rgba(56,189,248,0.15);
+}
+.tab-panel { }
+
+/* ?€?€ 撟渡??詨??€憛??€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€ */
+.grade-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.65rem;
+}
+.grade-label {
+    flex-shrink: 0;
+    width: 4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.25rem 0.4rem;
+    border-radius: 0.4rem;
+}
+.grade-7  { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+.grade-8  { background: rgba(129,140,248,0.15); color: #818cf8; }
+.grade-9  { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.grade-sp { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.grade-select { flex: 1; }
+
+/* ── 響應式設計 (RWD) ─────────────────────────────────────────── */
+/* 課表外層容器 */
+#scheduleTableContainer {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-top: 0.5rem;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* 1. 11吋 iPad / 平板直向 (寬度 601px ~ 960px，例如 iPad 11" 834px) */
+@media (min-width: 601px) and (max-width: 960px) {
+    .login-card, .query-card, .start-card {
+        max-width: 520px;
+        padding: 2.25rem 1.75rem;
+    }
+    .result-inner {
+        max-width: 100%;
+        padding: 0 0.5rem;
+    }
+    .schedule-table {
+        width: 100%;
+        min-width: 100%;
+        table-layout: fixed;
+    }
+    .th-period {
+        width: 75px;
+    }
+    .td-cell {
+        padding: 0.5rem 0.25rem;
+        min-height: 68px;
+    }
+    .cell-subject {
+        font-size: 0.9rem;
+    }
+    .cell-link {
+        font-size: 0.78rem;
+        padding: 2px 7px;
+    }
+}
+
+/* 2. 11吋 iPad / 平板橫向 (寬度 961px ~ 1240px，例如 iPad 11" 1194px) */
+@media (min-width: 961px) and (max-width: 1240px) {
+    .result-inner {
+        max-width: 1140px;
+    }
+    .schedule-table {
+        width: 100%;
+        table-layout: fixed;
+    }
+}
+
+/* 3. 手機直向 (如 Samsung S26+ 寬度 380px~440px) */
+@media (max-width: 600px) {
+    .theme-toggle-btn {
+        top: 0.75rem;
+        right: 0.75rem;
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+    }
+    #startView, #loginView, #queryView {
+        padding: 1.5rem 0.75rem;
+    }
+    .login-card, .query-card, .start-card {
+        padding: 1.75rem 1rem;
+        border-radius: 12px;
+    }
+    .guide-steps {
+        font-size: 0.86rem;
+    }
+    .template-modal-card {
+        max-height: 92vh;
+        padding: 1rem;
+    }
+    .prompt-template {
+        min-height: 300px;
+        font-size: 0.8rem;
+    }
+    .start-actions {
+        grid-template-columns: 1fr;
+    }
+    .site-footer {
+        padding: 0 1rem 1rem;
+        font-size: 0.72rem;
+    }
+    .login-logo h1 {
+        font-size: 1.25rem;
+    }
+    .schedule-title {
+        font-size: 1.2rem;
+        margin-bottom: 0.75rem;
+    }
+    .action-bar {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    .action-bar-left, .action-bar-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .tab-bar {
+        gap: 0.25rem;
+        padding: 0.25rem;
+    }
+    .tab-btn {
+        padding: 0.5rem 0.2rem;
+        font-size: 0.82rem;
+    }
+    /* 課表在手機上維持可順暢滑動的寬度 */
+    .schedule-table {
+        min-width: 560px;
+    }
+    .schedule-table th, .schedule-table td {
+        padding: 0.4rem 0.2rem;
+    }
+    .th-period {
+        width: 65px;
+    }
+    .period-num {
+        font-size: 0.78rem;
+    }
+    .period-time {
+        font-size: 0.7rem;
+    }
+    .td-cell {
+        min-height: 60px;
+        padding: 0.4rem 0.2rem;
+    }
+    .cell-subject {
+        font-size: 0.82rem;
+        margin-bottom: 0.25rem;
+    }
+    .cell-link {
+        font-size: 0.72rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+    }
+}
+
+/* 4. 手機橫向 (高度較小 < 500px，如 S26+ 橫拿) */
+@media (max-height: 500px) and (orientation: landscape) {
+    #startView, #loginView, #queryView {
+        min-height: auto;
+        padding: 1rem 0.5rem;
+    }
+    .login-card, .query-card, .start-card {
+        padding: 1.25rem 1.5rem;
+    }
+    .login-logo {
+        margin-bottom: 0.75rem;
+    }
+    .login-logo .logo-icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.4rem;
+        margin-bottom: 0.25rem;
+    }
+    .theme-toggle-btn {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+}
+
+/* ── 列印樣式 ─────────────────────────────────────────── */
+@media print {
+    body { background: #fff !important; color: #000 !important; }
+    body::before { display: none; }
+    #startView, #loginView, #queryView, #loadingOverlay { display: none !important; }
+    .action-bar { display: none !important; }
+    .site-footer { display: none !important; }
+    #resultView { display: block !important; opacity: 1 !important; padding: 0 !important; }
+    .result-inner { max-width: 100%; }
+    .glass-card, .table-wrapper { box-shadow: none !important; background: transparent !important; }
+
+    .schedule-title {
+        font-size: 1.4rem;
+        -webkit-text-fill-color: #000 !important;
+        color: #000 !important;
+        background: none !important;
+    }
+
+    .timetable { min-width: 0; width: 100%; }
+    .timetable thead th {
+        background: #f0f0f0 !important;
+        color: #000 !important;
+        border: 1px solid #aaa !important;
+    }
+    .timetable tbody th,
+    .timetable tbody td {
+        border: 1px solid #aaa !important;
+        color: #000 !important;
+        background: #fff !important;
+    }
+    .timetable .time-cell { color: #444 !important; }
+    .cell-subject { color: #000 !important; font-size: 0.9rem; }
+    .cell-link {
+        color: #000 !important;
+        background: #eee !important;
+        font-size: 0.78rem;
+    }
+    .cell-empty { color: #ccc !important; }
+    @page { size: A4 landscape; margin: 0.6in; }
+}
+/* 課表容器 RWD */
+#scheduleTableContainer {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 1rem;
+    border-radius: 0.5rem;
+    background: var(--card-bg);
+}
+
+/* ════════════════════════════════════════════════════════
+   AJ 標準 Footer + 免責聲明（/add-footer 注入）
+   規格來源：halfmemo.com blog，2026-07-20 版
+   全部用 aj- 前綴與 --aj-footer-* 變數，不影響專案既有樣式
+   ════════════════════════════════════════════════════════ */
+
+/* 淺色模式（= blog global.css :root 的同名變數值） */
+:root {
+    --aj-footer-surface: #ffffff;   /* blog --color-surface */
+    --aj-footer-border:  #ebebeb;   /* blog --color-border */
+    --aj-footer-muted:   #888888;   /* blog --color-text-muted */
+}
+
+/* 深色模式：本專案用 <html class="dark"> 切換，對應 A 段 */
+.dark {
+    --aj-footer-surface: #1c1d1f;
+    --aj-footer-border:  #2d2e31;
+    --aj-footer-muted:   #9aa0a6;
+}
+
+/* ── 免責聲明區塊 ──
+   字級基準說明：blog 的根字級是 17px（手機 16px），區塊內尺寸都是 rem。
+   這裡把基準字級直接設在區塊上（px），內部改用 em，
+   所以不管目標專案根字級是多少，算出來的尺寸都跟 blog 一模一樣。 */
+.aj-disclaimer {
+    width: 100%;            /* 防呆：萬一被巢狀塞進置中版面，也不會被夾成小方塊 */
+    margin-top: 4rem;
+    border-top: 1px solid var(--aj-footer-border);
+    background-color: var(--aj-footer-surface);
+    font-size: 17px;
+    font-family: "Segoe UI", "Inter", "PingFang TC", "Microsoft JhengHei",
+        "微軟正黑體", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* 品牌色漸層分隔線，貼在 disclaimer 下緣（blog 同款） */
+.aj-disclaimer::after {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgb(26, 122, 212) 25%,
+        rgb(26, 122, 212) 75%,
+        transparent 100%
+    );
+}
+
+.aj-disclaimer-inner {
+    max-width: 80em;        /* = blog 的 80rem（17px 基準 → 1360px） */
+    margin: 0 auto;
+    padding: 0.75em 1.5em;
+}
+
+.aj-disclaimer p {
+    font-size: 0.75em;      /* 17px × 0.75 = 12.75px，同 blog */
+    color: var(--aj-footer-muted);
+    line-height: 1.6;
+    margin: 0;
+    text-align: left;
+}
+
+/* ── Footer ── */
+.aj-site-footer {
+    width: 100%;            /* 防呆：萬一被巢狀塞進置中版面，也不會被夾成小方塊 */
+    background-color: var(--aj-footer-surface);
+    font-size: 17px;
+    line-height: 1.75;      /* blog body 的行高，footer 繼承同值 */
+    font-family: "Segoe UI", "Inter", "PingFang TC", "Microsoft JhengHei",
+        "微軟正黑體", "Noto Sans TC", system-ui, -apple-system, sans-serif;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.aj-footer-inner {
+    max-width: 80em;
+    margin: 0 auto;
+    padding: 1em 1.5em;
+    text-align: center;
+}
+
+.aj-footer-copy {
+    font-size: 0.875em;     /* 17px × 0.875 = 14.875px，同 blog */
+    color: var(--aj-footer-muted);
+    margin: 0;
+}
+
+/* 版權文字裡「半桶水的AI筆記」連結到 halfmemo.com：
+   顏色沿用父層的 muted 色，預設不加底線，滑鼠移過去才顯示底線 */
+.aj-footer-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.aj-footer-link:hover {
+    text-decoration: underline;
+}
+
+/* ── RWD：blog 在 ≤767px 時根字級 17px → 16px，整組等比縮小 ── */
+@media (max-width: 767px) {
+    .aj-disclaimer,
+    .aj-site-footer {
+        font-size: 16px;
+    }
+}

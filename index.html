@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="範例國中國中部課表查詢系統">
+    <meta name="robots" content="noindex">
+    <title>範例國中課表查詢系統</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script>
+        // 核心切換與套用主題函數
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            document.querySelectorAll('.theme-btn-text').forEach(el => {
+                el.textContent = isDark ? '淺色模式' : '深色模式';
+            });
+        }
+
+        function toggleTheme() {
+            const isDark = !document.documentElement.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            applyTheme(isDark);
+        }
+
+        // 初始載入判定
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+        if (initialDark) {
+            document.documentElement.classList.add('dark');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyTheme(document.documentElement.classList.contains('dark'));
+        });
+    </script>
+</head>
+<body>
+
+    <!-- Theme Toggle (Login / Query View 用) -->
+    <button id="themeToggleBtn" class="btn btn-ghost theme-toggle-btn" aria-label="切換深淺色" onclick="toggleTheme()">
+        <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </button>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="big-spinner"></div>
+        <p>正在載入課表資料，請稍候⋯</p>
+    </div>
+
+    <!-- ══ 0. 使用教學與匯入入口 ══════════════════════════════ -->
+    <div id="startView" class="view">
+        <div class="glass-card start-card">
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <h1 id="startSchoolName">課表查詢系統</h1>
+                <p>先用 AI 轉成標準 CSV，再匯入本機瀏覽器使用</p>
+            </div>
+
+            <div class="guide-box">
+                <h2>使用流程</h2>
+                <ol class="guide-steps">
+                    <li>準備學校原始課表檔案，例如 PDF、Word、Excel 或圖片。</li>
+                    <li>開啟 Gemini、ChatGPT 或其他 AI 網頁。</li>
+                    <li>在 AI 對話框按「上傳檔案」或「附件」，把學校課表檔案匯入 AI。</li>
+                    <li>回到本頁按「提示模板」，複製固定 prompt，貼到 AI 對話框後送出。</li>
+                    <li>下載 AI 產生的 `timetable_import.csv` 檔案；如果 AI 無法提供下載檔，才手動把 CSV 內容存成 `.csv`。</li>
+                    <li>回到本頁按「匯入檔案」，選擇剛剛下載或存好的 CSV。</li>
+                    <li>匯入成功後按「課表搜尋」，就會用該使用者自己的資料查詢。</li>
+                </ol>
+                <p class="privacy-note">匯入資料只存在目前這台電腦／手機的瀏覽器，不會上傳到你的 GitHub 或伺服器。</p>
+            </div>
+
+            <div id="importStatus" class="alert alert-info"></div>
+
+            <input type="file" id="importFileInput" accept=".csv,text/csv" class="hidden" onchange="handleImportFileChange(event)">
+
+            <div class="start-actions">
+                <button type="button" class="btn btn-primary btn-block" onclick="openTemplateModal()">
+                    提示模板
+                </button>
+                <button type="button" class="btn btn-success btn-block" onclick="openImportFilePicker()">
+                    匯入檔案
+                </button>
+                <button type="button" class="btn btn-ghost btn-block" onclick="enterScheduleSearch()">
+                    課表搜尋
+                </button>
+            </div>
+        </div>
+
+        <div class="site-footer">
+            本系統基於
+            <a href="https://github.com/littleyi22/timetable-demo" target="_blank" rel="noopener noreferrer">
+                奕鈞老師 timetable-demo
+            </a>
+            分叉改版，感謝原作者提供課表查詢系統基礎架構。
+        </div>
+    </div>
+
+    <!-- ══ 1. 登入視圖 ══════════════════════════════════════ -->
+    <div id="loginView" class="view">
+        <div class="glass-card login-card">
+            <div class="login-logo">
+                <div class="logo-icon">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </div>
+                <h1 id="schoolName">範例國中</h1>
+                <p id="schoolSubtitle">國中部課表查詢系統</p>
+            </div>
+            <form id="loginForm" autocomplete="off">
+                <div class="form-group">
+                    <label for="semesterSelect">學期</label>
+                    <select id="semesterSelect" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    <label for="loginUsername">帳號</label>
+                    <input type="text" id="loginUsername" class="form-control"
+                           placeholder="請輸入帳號" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">密碼</label>
+                    <input type="password" id="loginPassword" class="form-control"
+                           placeholder="請輸入密碼" autocomplete="current-password" required>
+                </div>
+                <div id="loginError" class="alert alert-danger" role="alert"></div>
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-block" style="margin-top:1.25rem">
+                    <span id="loginSpinner" class="spinner"></span>
+                    登入查詢
+                </button>
+                <button type="button" id="guestBtn" class="btn btn-ghost btn-block" style="margin-top:0.5rem" onclick="guestLogin()">
+                    訪客登入
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══ 2. 查詢視圖 ══════════════════════════════════════ -->
+    <div id="queryView" class="view">
+        <div class="glass-card query-card">
+
+            <!-- 標題列 -->
+            <div class="query-header">
+                <div>
+                    <h2>課表查詢</h2>
+                    <span id="currentSemester" class="semester-badge"></span>
+                </div>
+                <button class="btn btn-ghost logout-btn" onclick="logout()">回首頁</button>
+            </div>
+
+            <!-- 分頁切換 -->
+            <div class="tab-bar">
+                <button class="tab-btn active" id="tabClass" onclick="switchTab('class')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>班級查詢</span>
+                </button>
+                <button class="tab-btn" id="tabTeacher" onclick="switchTab('teacher')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    <span>教師查詢</span>
+                </button>
+                <button class="tab-btn" id="tabReverse" onclick="switchTab('reverse')">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: text-bottom; margin-right: 4px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <span>依師查詢</span>
+                </button>
+            </div>
+
+            <!-- 班級查詢 -->
+            <div id="panelClass" class="tab-panel">
+                <div class="form-group">
+                    <label for="deptSelect">科別</label>
+                    <select id="deptSelect" class="form-control" onchange="onDeptChange()">
+                        <option value="">— 選擇科別 —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="classSelect">班級</label>
+                    <select id="classSelect" class="form-control">
+                        <option value="">— 請先選擇科別 —</option>
+                    </select>
+                </div>
+                <div id="classError" class="alert alert-warning"></div>
+                <button class="btn btn-success btn-block" style="margin-top:1rem" onclick="submitClassQuery()">
+                    查　詢
+                </button>
+            </div>
+
+            <!-- 教師查詢 -->
+            <div id="panelTeacher" class="tab-panel hidden">
+                <div class="form-group">
+                    <label for="subjectSelect">科目</label>
+                    <select id="subjectSelect" class="form-control" onchange="onSubjectChange()">
+                        <option value="">— 選擇科目 —</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="teacherSelect">教師</label>
+                    <select id="teacherSelect" class="form-control">
+                        <option value="">— 請先選擇科目 —</option>
+                    </select>
+                </div>
+                <div id="teacherError" class="alert alert-warning"></div>
+                <button class="btn btn-success btn-block" style="margin-top:1rem" onclick="submitTeacherQuery()">
+                    查　詢
+                </button>
+            </div>
+
+            <!-- 依教師反查科目/全課表 -->
+            <div id="panelReverse" class="tab-panel hidden">
+                <div class="form-group">
+                    <label for="teacherInput">教師姓名</label>
+                    <div class="autocomplete-wrap">
+                        <input type="text" id="teacherInput" class="form-control"
+                               placeholder="輸入教師姓名關鍵字（例如：何）" autocomplete="off"
+                               oninput="onTeacherInputChange()"
+                               onfocus="onTeacherInputChange()"
+                               onkeydown="onTeacherInputKeydown(event)">
+                        <div id="teacherAutocompleteList" class="autocomplete-list"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="teacherSubjectSelect">查詢項目（科目 / 完整課表）</label>
+                    <select id="teacherSubjectSelect" class="form-control">
+                        <option value="">— 請先輸入教師姓名 —</option>
+                    </select>
+                </div>
+                <div id="reverseError" class="alert alert-warning"></div>
+                <button class="btn btn-success btn-block" style="margin-top:1rem" onclick="submitReverseQuery()">
+                    查　詢
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ══ 3. 結果視圖 ══════════════════════════════════════ -->
+    <div id="resultView" class="view">
+        <div class="result-inner">
+
+            <!-- 操作列：與 glass-card 左邊緣切齊 (純圖示模式) -->
+            <div class="action-bar">
+                <button id="backBtn" class="btn btn-ghost btn-icon" onclick="goBack()" title="上一頁" aria-label="上一頁">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                </button>
+                <button class="btn btn-ghost btn-icon" onclick="showQueryView()" title="重新查詢" aria-label="重新查詢">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+                <button class="btn btn-print btn-icon" onclick="printSchedule()" title="列印課表" aria-label="列印課表">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                </button>
+                <button class="btn btn-ghost theme-btn-inline btn-icon" onclick="toggleTheme()" title="切換深淺色" aria-label="切換深淺色模式">
+                    <svg class="sun-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    <svg class="moon-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                </button>
+            </div>
+
+            <div class="glass-card result-card" style="padding:1.5rem 1rem; overflow:hidden;">
+                <h2 id="scheduleTitle" class="schedule-title"></h2>
+                <div id="scheduleTableContainer" class="table-wrapper"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ 提示模板彈窗 ══════════════════════════════════════ -->
+    <div id="templateModal" class="modal-overlay" aria-hidden="true">
+        <div class="glass-card template-modal-card" role="dialog" aria-modal="true" aria-labelledby="templateModalTitle">
+            <div class="modal-header">
+                <h2 id="templateModalTitle">AI 轉檔提示模板</h2>
+                <button type="button" class="btn btn-ghost btn-icon" onclick="closeTemplateModal()" aria-label="關閉提示模板">
+                    ×
+                </button>
+            </div>
+
+            <div class="modal-content">
+                <h3>操作步驟</h3>
+                <ol class="guide-steps">
+                    <li>開啟 Gemini、ChatGPT 或 Claude。</li>
+                    <li>在 AI 對話框按「上傳檔案」或「附件」。</li>
+                    <li>把學校原始課表檔案匯入 AI，例如 PDF、Word、Excel 或圖片。</li>
+                    <li>確認檔案已上傳完成後，複製下方提示模板貼給 AI 並送出。</li>
+                    <li>請 AI 產生可下載的 `timetable_import.csv` 檔案，並把它下載到電腦或手機。</li>
+                    <li>如果 AI 平台不能產生下載檔，才把它貼出的 CSV 內容另存成 `.csv` 檔案。</li>
+                    <li>回到本頁按「匯入檔案」，選擇剛剛下載或存好的 CSV。</li>
+                </ol>
+
+                <h3>請複製這段提示詞</h3>
+                <textarea id="promptTemplateText" class="prompt-template" readonly></textarea>
+                <button type="button" class="btn btn-primary btn-block" onclick="copyPromptTemplate()">
+                    複製提示模板
+                </button>
+                <p id="copyStatus" class="copy-status"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 免責聲明 + Footer（/add-footer 插入，樣式與 halfmemo.com 相同）
+         注意：這裡是 <body> 的直接子元素，跟上面 #startView / #loginView /
+         #queryView / #resultView / #templateModal 同一層，
+         不可以塞進任何一個 .view 裡面，否則會被該畫面的置中版面夾成小方塊，
+         而且切到別的畫面時會直接消失。 -->
+    <section class="aj-disclaimer">
+        <div class="aj-disclaimer-inner">
+            <p>
+                免責聲明：本站內容為個人學習、實作與經驗分享紀錄，部分內容透過 AI 協助修正與整理。
+                由於每位使用者的系統環境、軟體版本、權限設定與操作方式不同，實際結果可能有所差異。
+                請在操作前自行評估風險並備份重要資料。
+                因參考本站內容所造成之任何系統異常、資料遺失、設定錯誤、設備故障、服務中斷或其他直接、間接損失，
+                均由使用者自行承擔，本站與作者不負任何相關責任。
+            </p>
+        </div>
+    </section>
+
+    <footer class="aj-site-footer">
+        <div class="aj-footer-inner">
+            <p class="aj-footer-copy">© <span class="aj-footer-year">2026</span> <a href="https://halfmemo.com/" target="_blank" rel="noopener noreferrer" class="aj-footer-link">半桶水的AI筆記</a>. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+    <script>
+        document.title = '課表查詢系統';
+        document.getElementById('schoolName').textContent    = CONFIG.SCHOOL_NAME;
+        document.getElementById('schoolSubtitle').textContent = CONFIG.SCHOOL_SUBTITLE;
+    </script>
+    <script>
+        /* Footer 年份自動更新（/add-footer 插入） */
+        document.querySelectorAll('.aj-footer-year').forEach(function (el) {
+            el.textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>

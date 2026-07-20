@@ -1,0 +1,27 @@
+# Python 隔離環境（用 uv 建立，依賴清單見 requirements.txt）
+.venv/
+
+# 課表資料轉換過程中的暫存檔（來源PDF渲染出的圖片、AI轉錄的中間JSON、測試截圖）
+_pages/
+_extract/
+_test_screenshots/
+
+# 原始課表 PDF：檔案大且可能含真實教師姓名/課表等資料，不進版控
+*.pdf
+
+# 原始課表 Word 檔與 PDF 性質相同，通常含教師姓名與課表資料，不進版控
+*.docx
+
+# 本機 AI 工具設定，不進版控
+.claude/
+
+# 本機 AI / Codex 工作指引與個人環境說明，不進版控
+CLAUDE.md
+AGENTS.md
+
+# 使用者從 AI 下載後用來匯入測試的本機 CSV，不進版控
+timetable_import*.csv
+
+# 本機真實課表資料與 CSV 匯入/範例檔，不進版控
+homerooms_*.json
+timetable_*.csv
