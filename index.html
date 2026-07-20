@@ -301,23 +301,11 @@
         </div>
     </div>
 
-    <!-- 免責聲明 + Footer（/add-footer 插入，樣式與 halfmemo.com 相同）
+    <!-- Footer（/add-footer-only 插入，樣式與 halfmemo.com 相同）
          注意：這裡是 <body> 的直接子元素，跟上面 #startView / #loginView /
          #queryView / #resultView / #templateModal 同一層，
          不可以塞進任何一個 .view 裡面，否則會被該畫面的置中版面夾成小方塊，
          而且切到別的畫面時會直接消失。 -->
-    <section class="aj-disclaimer">
-        <div class="aj-disclaimer-inner">
-            <p>
-                免責聲明：本站內容為個人學習、實作與經驗分享紀錄，部分內容透過 AI 協助修正與整理。
-                由於每位使用者的系統環境、軟體版本、權限設定與操作方式不同，實際結果可能有所差異。
-                請在操作前自行評估風險並備份重要資料。
-                因參考本站內容所造成之任何系統異常、資料遺失、設定錯誤、設備故障、服務中斷或其他直接、間接損失，
-                均由使用者自行承擔，本站與作者不負任何相關責任。
-            </p>
-        </div>
-    </section>
-
     <footer class="aj-site-footer">
         <div class="aj-footer-inner">
             <p class="aj-footer-copy">© <span class="aj-footer-year">2026</span> <a href="https://halfmemo.com/" target="_blank" rel="noopener noreferrer" class="aj-footer-link">半桶水的AI筆記</a>. All rights reserved.</p>
@@ -332,7 +320,7 @@
         document.getElementById('schoolSubtitle').textContent = CONFIG.SCHOOL_SUBTITLE;
     </script>
     <script>
-        /* Footer 年份自動更新（/add-footer 插入） */
+        /* Footer 年份自動更新（/add-footer-only 插入） */
         document.querySelectorAll('.aj-footer-year').forEach(function (el) {
             el.textContent = new Date().getFullYear();
         });

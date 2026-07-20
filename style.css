@@ -983,7 +983,7 @@ html.dark .cell-link {
 }
 
 /* ════════════════════════════════════════════════════════
-   AJ 標準 Footer + 免責聲明（/add-footer 注入）
+   AJ 標準 Footer（/add-footer-only 注入，不含免責聲明）
    規格來源：halfmemo.com blog，2026-07-20 版
    全部用 aj- 前綴與 --aj-footer-* 變數，不影響專案既有樣式
    ════════════════════════════════════════════════════════ */
@@ -991,34 +991,33 @@ html.dark .cell-link {
 /* 淺色模式（= blog global.css :root 的同名變數值） */
 :root {
     --aj-footer-surface: #ffffff;   /* blog --color-surface */
-    --aj-footer-border:  #ebebeb;   /* blog --color-border */
     --aj-footer-muted:   #888888;   /* blog --color-text-muted */
 }
 
 /* 深色模式：本專案用 <html class="dark"> 切換，對應 A 段 */
 .dark {
     --aj-footer-surface: #1c1d1f;
-    --aj-footer-border:  #2d2e31;
     --aj-footer-muted:   #9aa0a6;
 }
 
-/* ── 免責聲明區塊 ──
+/* ── Footer ──
    字級基準說明：blog 的根字級是 17px（手機 16px），區塊內尺寸都是 rem。
    這裡把基準字級直接設在區塊上（px），內部改用 em，
    所以不管目標專案根字級是多少，算出來的尺寸都跟 blog 一模一樣。 */
-.aj-disclaimer {
+.aj-site-footer {
     width: 100%;            /* 防呆：萬一被巢狀塞進置中版面，也不會被夾成小方塊 */
-    margin-top: 4rem;
-    border-top: 1px solid var(--aj-footer-border);
+    margin-top: 4rem;       /* 與上方內容留白（原免責聲明區的同值） */
     background-color: var(--aj-footer-surface);
     font-size: 17px;
+    line-height: 1.75;      /* blog body 的行高，footer 繼承同值 */
     font-family: "Segoe UI", "Inter", "PingFang TC", "Microsoft JhengHei",
         "微軟正黑體", "Noto Sans TC", system-ui, -apple-system, sans-serif;
     transition: background-color 0.2s, color 0.2s;
 }
 
-/* 品牌色漸層分隔線，貼在 disclaimer 下緣（blog 同款） */
-.aj-disclaimer::after {
+/* 品牌色漸層分隔線，貼在 footer 上緣
+   （移除免責聲明後，原本掛在 disclaimer 下緣的分隔線改掛在這裡，視覺位置相同） */
+.aj-site-footer::before {
     content: "";
     display: block;
     height: 2px;
@@ -1029,31 +1028,6 @@ html.dark .cell-link {
         rgb(26, 122, 212) 75%,
         transparent 100%
     );
-}
-
-.aj-disclaimer-inner {
-    max-width: 80em;        /* = blog 的 80rem（17px 基準 → 1360px） */
-    margin: 0 auto;
-    padding: 0.75em 1.5em;
-}
-
-.aj-disclaimer p {
-    font-size: 0.75em;      /* 17px × 0.75 = 12.75px，同 blog */
-    color: var(--aj-footer-muted);
-    line-height: 1.6;
-    margin: 0;
-    text-align: left;
-}
-
-/* ── Footer ── */
-.aj-site-footer {
-    width: 100%;            /* 防呆：萬一被巢狀塞進置中版面，也不會被夾成小方塊 */
-    background-color: var(--aj-footer-surface);
-    font-size: 17px;
-    line-height: 1.75;      /* blog body 的行高，footer 繼承同值 */
-    font-family: "Segoe UI", "Inter", "PingFang TC", "Microsoft JhengHei",
-        "微軟正黑體", "Noto Sans TC", system-ui, -apple-system, sans-serif;
-    transition: background-color 0.2s, color 0.2s;
 }
 
 .aj-footer-inner {
@@ -1080,9 +1054,8 @@ html.dark .cell-link {
     text-decoration: underline;
 }
 
-/* ── RWD：blog 在 ≤767px 時根字級 17px → 16px，整組等比縮小 ── */
+/* ── RWD：blog 在 ≤767px 時根字級 17px → 16px，等比縮小 ── */
 @media (max-width: 767px) {
-    .aj-disclaimer,
     .aj-site-footer {
         font-size: 16px;
     }
