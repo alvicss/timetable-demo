@@ -72,16 +72,20 @@ body {
     opacity: 0;
     transition: opacity var(--transition);
 }
+/*
+ * 作用中的 view 直接設為完全不透明（opacity: 1）。
+ * 原本這裡用的是 animation ... forwards，forwards 會讓動畫永久停留在
+ * 生效狀態，導致容器被瀏覽器提升成獨立合成圖層，使子層的原生 <select>
+ * 下拉清單被錯誤定位到畫面右上角（看似空白、實際有內容）。改用靜態
+ * opacity 後，祖先元素不再是持續動畫狀態，下拉清單即可正常對齊。
+ */
 .view.active {
     display: flex;
-    animation: fadeIn var(--transition) forwards;
+    opacity: 1;
 }
 .view.result-active {
     display: block;
-    animation: fadeIn var(--transition) forwards;
-}
-@keyframes fadeIn {
-    to { opacity: 1; }
+    opacity: 1;
 }
 
 /* ?? ?餃 & ?亥岷閬? (?蝵桐葉) ????????????????????????????? */

@@ -24,25 +24,42 @@ const DEFAULT_START_TITLE = '課表查詢系統';
 
 // 給一般使用者貼到 AI 網頁版的固定提示詞。
 // 目標是讓不同學校的原始課表，先被 AI 整理成本站可匯入的簡單 CSV 格式。
-const AI_PROMPT_TEMPLATE = `請幫我把上傳的學校課表檔案轉成標準 CSV，並提供可下載的 .csv 檔案。
+const AI_PROMPT_TEMPLATE = `請幫我把我提供的學校課表檔案轉成標準 CSV，並提供可下載的 .csv 檔案。
 
-請務必遵守以下規則：
+【來源檔案可能有兩種版本，請互相比對】
+我提供的課表可能同時包含「班級課表」與「教師課表」兩種版本（可能是兩個檔案，也可能在同一個檔案的不同頁或不同區塊）：
+- 班級課表：以班級為單位，每一格通常只寫科目，老師姓名可能省略或很小。
+- 教師課表：以教師為單位，每一格寫這位老師在該時段教哪個班、哪個科目。
+這兩份是同一份課表的不同呈現，內容會互相對應。
+
+【最重要：teacher 欄一定要先交叉比對再填，不要動不動就填 UNKNOWN】
+1. 針對班級課表裡的每一格（班級＋星期＋節次＋科目），請到教師課表裡找出「相同班級、相同時段、相同科目」的那位老師，把老師姓名填進 teacher 欄。
+2. 如果只拿到單一版本，也請盡量從整份檔案的其他資訊（表頭、備註、任課教師名單、導師欄）推斷出授課老師。
+3. 「團體活動時間、週會、班會、彈性學習、自習」這類沒有專任科任老師的時段：如果看得出是該班導師帶的，就填導師姓名；真的沒有老師才把 teacher 欄留空。
+4. 只有在「兩份都比對過、整份檔案也真的查不到」時，teacher 欄才可以留空。請不要再填 UNKNOWN。
+
+【輸出格式】
 1. 請優先建立一個可下載的 CSV 檔案，檔名請使用 timetable_import.csv。
 2. 不要只把 CSV 貼在對話內容裡；我需要可以下載後匯入網站的 .csv 檔。
 3. 如果你所在的平台完全無法提供下載檔，才改用純文字貼出 CSV 內容，且不要加說明文字、不要加 Markdown 程式碼區塊。
 4. CSV 檔案的第一列欄位名稱必須固定為：
 school,class,day,period,subject,teacher,location
 5. 每一節課一列，不要合併儲存格。
-6. school 請填學校名稱，每一列都填同一個學校名稱；如果原始資料看不出學校名稱，請填 UNKNOWN。
-7. class 請填班級名稱，例如 機械一甲、701、八年一班。
-8. day 請填 1 到 5，1=星期一、2=星期二、3=星期三、4=星期四、5=星期五。
-9. period 請填節次數字。早自習可填 0；第 1 節到第 8 節請填 1 到 8。
-10. subject 請填科目名稱。
-11. teacher 請填教師姓名。
-12. location 沒有資料就留空。
-13. 不確定的欄位請填 UNKNOWN，不要自行猜測。
-14. 如果同一節有多位教師或多個班級，請拆成多列。
-15. 產生檔案前請自行檢查欄位順序與列數，不要漏掉任何課程。
+
+【各欄位填法】
+- school：學校名稱，每一列都填同一個；真的看不出來才留空。
+- class：班級名稱，例如 機械一甲、園藝一、701、八年一班。
+- day：填 1 到 5，1=星期一、2=星期二、3=星期三、4=星期四、5=星期五。
+- period：節次數字，早自習可填 0；第 1 節到第 8 節填 1 到 8。
+- subject：科目名稱，整份請用字一致（例如全部都寫「團體活動時間」，不要有的寫「團體活動」有的寫「團體活動時間」）。
+- teacher：授課教師姓名，請依上面「交叉比對」規則填寫；真的查不到才留空。
+- location：沒有資料就留空。
+- 如果同一節有多位教師或多個班級，請拆成多列，每位老師、每個班級各一列。
+
+【送出前請自我檢查】
+- teacher 欄是否都盡力交叉比對過？有沒有其實查得到、卻被填成空白的？
+- 同一個科目名稱前後是否一致？
+- 欄位順序、列數是否正確，有沒有漏掉任何一堂課？
 
 輸出範例：
 school,class,day,period,subject,teacher,location
@@ -494,6 +511,21 @@ function createEmptyTeacherRow(teacherName) {
     return row;
 }
 
+// 用來標記「這一列沒有真正授課老師」的教師主鍵前綴。
+// 帶這個前綴的教師（以及空白、UNKNOWN 等）都視為佔位，不會出現在教師相關的下拉選單裡。
+const PLACEHOLDER_TEACHER_PREFIX = '（未指定教師）';
+
+// 判斷某個教師姓名是不是「佔位值」：空白、UNKNOWN，或我們自己產生的未指定教師鍵。
+// 佔位教師代表這堂課查不到真正老師，多半是全校性活動或 AI 無法辨識的情況。
+function isPlaceholderTeacherName(name) {
+    const trimmed = (name || '').trim();
+    if (trimmed === '') return true;
+    const upper = trimmed.toUpperCase();
+    if (upper === 'UNKNOWN' || upper === 'N/A' || upper === 'NA') return true;
+    if (trimmed === '未知' || trimmed === '無' || trimmed === '待確認') return true;
+    return trimmed.startsWith(PLACEHOLDER_TEACHER_PREFIX);
+}
+
 function convertSimpleRowsToInternalCsv(simpleRows) {
     const teacherRows = {};
 
@@ -508,8 +540,10 @@ function convertSimpleRowsToInternalCsv(simpleRows) {
         const hasAnyImportantValue = teacher || className || subject || sourceRow.day || sourceRow.period;
         if (!hasAnyImportantValue) return;
 
-        if (!teacher || !className || !subject || !Number.isInteger(day) || !Number.isInteger(period)) {
-            throw new Error(`第 ${index + 2} 列缺少 class/day/period/subject/teacher 必要資料。`);
+        // class/subject/day/period 為必填；teacher 允許空白或佔位值
+        // （例如團體活動時間、班會這類沒有專任老師的時段，或 AI 交叉比對後仍查不到老師）。
+        if (!className || !subject || !Number.isInteger(day) || !Number.isInteger(period)) {
+            throw new Error(`第 ${index + 2} 列缺少 class/day/period/subject 必要資料。`);
         }
         if (day < 1 || day > 5) {
             throw new Error(`第 ${index + 2} 列 day 必須是 1 到 5。`);
@@ -518,13 +552,24 @@ function convertSimpleRowsToInternalCsv(simpleRows) {
             throw new Error(`第 ${index + 2} 列 period 必須是 0 到 9。`);
         }
 
-        if (!teacherRows[teacher]) {
-            teacherRows[teacher] = createEmptyTeacherRow(teacher);
+        // 內部格式以「教師」當每一列的主鍵。若這一列沒有真正的授課老師
+        // （空白或 UNKNOWN 等佔位值），就改用「班級＋科目」組成專屬主鍵，
+        // 確保不同班級、不同科目的無老師課程不會被塞進同一列而互相污染
+        // （這正是先前會出現「植物保護實習 / 嵌入式系 / …」一長串亂碼的原因）。
+        let teacherKey;
+        if (isPlaceholderTeacherName(teacher)) {
+            teacherKey = `${PLACEHOLDER_TEACHER_PREFIX}${className}｜${subject}`;
+        } else {
+            teacherKey = teacher;
+        }
+
+        if (!teacherRows[teacherKey]) {
+            teacherRows[teacherKey] = createEmptyTeacherRow(teacherKey);
         }
 
         const subjectKey = `s${day}${period}`;
         const classKey = `c${day}${period}`;
-        const targetRow = teacherRows[teacher];
+        const targetRow = teacherRows[teacherKey];
 
         if (targetRow[subjectKey] && targetRow[subjectKey] !== subject) {
             targetRow[subjectKey] = `${targetRow[subjectKey]} / ${subject}`;
@@ -614,8 +659,10 @@ function buildCategories() {
     });
 
     // ── 科目→教師分類（含早自習）──
+    // 佔位教師（未指定 / UNKNOWN）不列入，避免「教師查詢」的科目與教師下拉出現無意義項目。
     subjectTeachers = {};
     scheduleData.forEach(row => {
+        if (isPlaceholderTeacherName(row.teachername)) return;
         for (let d = 1; d <= 5; d++)
             for (let p of PERIODS_ALL) {
                 const subj = row[`s${d}${p}`];
@@ -774,7 +821,10 @@ function renderTeacherAutocomplete(keyword) {
         return;
     }
 
-    const allNames = [...new Set(scheduleData.map(r => r.teachername))].sort();
+    // 佔位教師（未指定 / UNKNOWN）不納入反查候選，使用者只會想查真實老師。
+    const allNames = [...new Set(scheduleData.map(r => r.teachername))]
+        .filter(name => !isPlaceholderTeacherName(name))
+        .sort();
     const matches  = allNames.filter(n => n.includes(keyword));
     teacherAutocompleteMatches = matches;
 
@@ -922,17 +972,18 @@ function displayClassSchedule(className) {
     pushNav('class', className);
     const cells = {};
     scheduleData.forEach(row => {
+        // 佔位教師（未指定 / UNKNOWN）只保留科目，不顯示成可點的老師連結。
+        const isPlaceholder = isPlaceholderTeacherName(row.teachername);
         for (let d = 1; d <= 5; d++)
             for (let p of PERIODS_ALL) {
                 const classes = (row[`c${d}${p}`] || '').split(' ');
                 if (classes.includes(className) && row[`s${d}${p}`]) {
                     const key = `${d}-${p}`;
                     if (!cells[key]) {
-                        cells[key] = { subject: row[`s${d}${p}`], items: [row.teachername] };
-                    } else {
-                        if (!cells[key].items.includes(row.teachername)) {
-                            cells[key].items.push(row.teachername);
-                        }
+                        cells[key] = { subject: row[`s${d}${p}`], items: [] };
+                    }
+                    if (!isPlaceholder && !cells[key].items.includes(row.teachername)) {
+                        cells[key].items.push(row.teachername);
                     }
                 }
             }
