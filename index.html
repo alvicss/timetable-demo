@@ -76,6 +76,7 @@
                     <li>回到本頁按「提示模板」，複製固定 prompt，貼到 AI 對話框後送出。</li>
                     <li>下載 AI 產生的 `timetable_import.csv` 檔案；如果 AI 無法提供下載檔，才手動把 CSV 內容存成 `.csv`。</li>
                     <li>回到本頁按「匯入檔案」，選擇剛剛下載或存好的 CSV。</li>
+                    <li>如果出現待確認資料，依畫面列出的 CSV 列號、班級與時段回頭核對，或明確選擇仍然匯入。</li>
                     <li>匯入成功後按「課表搜尋」，就會用該使用者自己的資料查詢。</li>
                 </ol>
                 <p class="privacy-note">匯入資料只存在目前這台電腦／手機的瀏覽器，不會上傳到你的 GitHub 或伺服器。</p>
@@ -289,6 +290,7 @@
                     <li>請 AI 產生可下載的 `timetable_import.csv` 檔案，並把它下載到電腦或手機。</li>
                     <li>如果 AI 平台不能產生下載檔，才把它貼出的 CSV 內容另存成 `.csv` 檔案。</li>
                     <li>回到本頁按「匯入檔案」，選擇剛剛下載或存好的 CSV。</li>
+                    <li>若網站列出 UNKNOWN 類待確認資料，請先核對原始課表；選擇仍然匯入時，課程會保留，但佔位文字不會列為教師。</li>
                 </ol>
 
                 <h3>請複製這段提示詞</h3>
@@ -301,9 +303,48 @@
         </div>
     </div>
 
+    <!-- ══ CSV 匯入資料品質檢查彈窗 ══════════════════════════ -->
+    <div id="importValidationModal" class="modal-overlay" aria-hidden="true">
+        <div class="glass-card import-validation-modal-card" role="dialog" aria-modal="true" aria-labelledby="importValidationTitle">
+            <div class="modal-header">
+                <h2 id="importValidationTitle">匯入前發現待確認資料</h2>
+                <button type="button" class="btn btn-ghost btn-icon" onclick="cancelPendingTimetableImport()" aria-label="取消匯入並關閉">
+                    ×
+                </button>
+            </div>
+
+            <p id="importValidationSummary" class="import-validation-summary"></p>
+
+            <div class="import-issue-table-wrapper">
+                <table class="import-issue-table">
+                    <thead>
+                        <tr>
+                            <th>CSV 列</th>
+                            <th>班級</th>
+                            <th>星期</th>
+                            <th>節次</th>
+                            <th>科目</th>
+                            <th>teacher 原值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="importValidationRows"></tbody>
+                </table>
+            </div>
+
+            <div class="import-validation-actions">
+                <button type="button" class="btn btn-ghost" onclick="cancelPendingTimetableImport()">
+                    取消，回去修正
+                </button>
+                <button type="button" class="btn btn-success" onclick="confirmPendingTimetableImport()">
+                    我已了解，仍然匯入
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer（/add-footer-only 插入，樣式與 halfmemo.com 相同）
          注意：這裡是 <body> 的直接子元素，跟上面 #startView / #loginView /
-         #queryView / #resultView / #templateModal 同一層，
+         #queryView / #resultView / #templateModal / #importValidationModal 同一層，
          不可以塞進任何一個 .view 裡面，否則會被該畫面的置中版面夾成小方塊，
          而且切到別的畫面時會直接消失。 -->
     <footer class="aj-site-footer">

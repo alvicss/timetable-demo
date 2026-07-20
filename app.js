@@ -12,6 +12,7 @@ let isLoggedIn      = false;
 let navHistory      = [];   // 導航歷史 [{type, value}]
 let classGroups     = {};   // 班級分類
 let subjectTeachers = {};   // 科目→教師
+let pendingTimetableImport = null; // 等待使用者確認是否仍要匯入的原始 CSV
 
 const PERIODS_ALL   = [0,1,2,3,4,5,6,7,8];  // 0=早自習, 1~8=第1~8節
 const DAYS          = ['一','二','三','四','五'];
@@ -22,50 +23,65 @@ const LOCAL_SCHOOL_NAME_KEY = 'timetable.importedSchoolName.v1';
 const LOCAL_DATA_LABEL = '本機匯入資料';
 const DEFAULT_START_TITLE = '課表查詢系統';
 
-// 給一般使用者貼到 AI 網頁版的固定提示詞。
-// 目標是讓不同學校的原始課表，先被 AI 整理成本站可匯入的簡單 CSV 格式。
-const AI_PROMPT_TEMPLATE = `請幫我把我提供的學校課表檔案轉成標準 CSV，並提供可下載的 .csv 檔案。
+// 網站直接讀取 docs100 的 text 程式碼區塊，讓文件與首頁提示模板永遠使用同一份內容。
+const AI_PROMPT_SOURCE_URL = 'docs/100_課表CSV轉換標準Prompt.md';
+let aiPromptTemplateCache = '';
+let aiPromptTemplateRequest = null;
 
-【來源檔案可能有兩種版本，請互相比對】
-我提供的課表可能同時包含「班級課表」與「教師課表」兩種版本（可能是兩個檔案，也可能在同一個檔案的不同頁或不同區塊）：
-- 班級課表：以班級為單位，每一格通常只寫科目，老師姓名可能省略或很小。
-- 教師課表：以教師為單位，每一格寫這位老師在該時段教哪個班、哪個科目。
-這兩份是同一份課表的不同呈現，內容會互相對應。
+// 從 Markdown 中取出唯一的 ```text 區塊，不把標題與網站說明一起複製給 AI。
+function extractPromptFromMarkdown(markdownText) {
+    const openingFence = '```text';
+    const closingFence = '```';
+    const openingIndex = markdownText.indexOf(openingFence);
 
-【最重要：teacher 欄一定要先交叉比對再填，不要動不動就填 UNKNOWN】
-1. 針對班級課表裡的每一格（班級＋星期＋節次＋科目），請到教師課表裡找出「相同班級、相同時段、相同科目」的那位老師，把老師姓名填進 teacher 欄。
-2. 如果只拿到單一版本，也請盡量從整份檔案的其他資訊（表頭、備註、任課教師名單、導師欄）推斷出授課老師。
-3. 「團體活動時間、週會、班會、彈性學習、自習」這類沒有專任科任老師的時段：如果看得出是該班導師帶的，就填導師姓名；真的沒有老師才把 teacher 欄留空。
-4. 只有在「兩份都比對過、整份檔案也真的查不到」時，teacher 欄才可以留空。請不要再填 UNKNOWN。
+    if (openingIndex < 0) {
+        throw new Error('找不到 Prompt 的 text 區塊。');
+    }
 
-【輸出格式】
-1. 請優先建立一個可下載的 CSV 檔案，檔名請使用 timetable_import.csv。
-2. 不要只把 CSV 貼在對話內容裡；我需要可以下載後匯入網站的 .csv 檔。
-3. 如果你所在的平台完全無法提供下載檔，才改用純文字貼出 CSV 內容，且不要加說明文字、不要加 Markdown 程式碼區塊。
-4. CSV 檔案的第一列欄位名稱必須固定為：
-school,class,day,period,subject,teacher,location
-5. 每一節課一列，不要合併儲存格。
+    const contentStart = markdownText.indexOf('\n', openingIndex);
+    if (contentStart < 0) {
+        throw new Error('Prompt 的 text 區塊格式不完整。');
+    }
 
-【各欄位填法】
-- school：學校名稱，每一列都填同一個；真的看不出來才留空。
-- class：班級名稱，例如 機械一甲、園藝一、701、八年一班。
-- day：填 1 到 5，1=星期一、2=星期二、3=星期三、4=星期四、5=星期五。
-- period：節次數字，早自習可填 0；第 1 節到第 8 節填 1 到 8。
-- subject：科目名稱，整份請用字一致（例如全部都寫「團體活動時間」，不要有的寫「團體活動」有的寫「團體活動時間」）。
-- teacher：授課教師姓名，請依上面「交叉比對」規則填寫；真的查不到才留空。
-- location：沒有資料就留空。
-- 如果同一節有多位教師或多個班級，請拆成多列，每位老師、每個班級各一列。
+    const closingIndex = markdownText.indexOf(`\n${closingFence}`, contentStart + 1);
+    if (closingIndex < 0) {
+        throw new Error('找不到 Prompt 的結束標記。');
+    }
 
-【送出前請自我檢查】
-- teacher 欄是否都盡力交叉比對過？有沒有其實查得到、卻被填成空白的？
-- 同一個科目名稱前後是否一致？
-- 欄位順序、列數是否正確，有沒有漏掉任何一堂課？
+    const prompt = markdownText.slice(contentStart + 1, closingIndex).trim();
+    if (!prompt) {
+        throw new Error('Prompt 內容是空白的。');
+    }
 
-輸出範例：
-school,class,day,period,subject,teacher,location
-市立範例高中,機械一甲,1,1,國文,王小明,機械一甲教室
-市立範例高中,機械一甲,1,2,數學,李小華,
-市立範例高中,電子二乙,3,5,英文,陳美玲,`;
+    return prompt;
+}
+
+// 第一次載入後保留快取；讀取失敗時清除 Promise，讓使用者下次開啟仍可重試。
+async function loadAiPromptTemplate() {
+    if (aiPromptTemplateCache) {
+        return aiPromptTemplateCache;
+    }
+
+    if (!aiPromptTemplateRequest) {
+        aiPromptTemplateRequest = fetch(AI_PROMPT_SOURCE_URL, { cache: 'no-cache' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Prompt 文件載入失敗（HTTP ${response.status}）。`);
+                }
+                return response.text();
+            })
+            .then(markdownText => {
+                aiPromptTemplateCache = extractPromptFromMarkdown(markdownText);
+                return aiPromptTemplateCache;
+            })
+            .catch(error => {
+                aiPromptTemplateRequest = null;
+                throw error;
+            });
+    }
+
+    return aiPromptTemplateRequest;
+}
 
 /* ── DOM 參考 ─────────────────────────────────────────────── */
 const startView    = document.getElementById('startView');
@@ -276,13 +292,13 @@ function extractSchoolNameFromRows(rows) {
     return '';
 }
 
-function openTemplateModal() {
+async function openTemplateModal() {
     const modal = document.getElementById('templateModal');
     const promptText = document.getElementById('promptTemplateText');
     const copyStatus = document.getElementById('copyStatus');
 
     if (promptText) {
-        promptText.value = AI_PROMPT_TEMPLATE;
+        promptText.value = '正在載入完整提示模板...';
     }
     if (copyStatus) {
         copyStatus.textContent = '';
@@ -290,6 +306,20 @@ function openTemplateModal() {
     if (modal) {
         modal.classList.add('show');
         modal.setAttribute('aria-hidden', 'false');
+    }
+
+    try {
+        const prompt = await loadAiPromptTemplate();
+        if (promptText) {
+            promptText.value = prompt;
+        }
+    } catch (err) {
+        if (promptText) {
+            promptText.value = '';
+        }
+        if (copyStatus) {
+            copyStatus.textContent = `提示模板載入失敗：${err.message} 請確認 docs100 文件仍存在。`;
+        }
     }
 }
 
@@ -304,10 +334,11 @@ async function copyPromptTemplate() {
     const copyStatus = document.getElementById('copyStatus');
 
     try {
-        await navigator.clipboard.writeText(AI_PROMPT_TEMPLATE);
+        const prompt = await loadAiPromptTemplate();
+        await navigator.clipboard.writeText(prompt);
         if (copyStatus) copyStatus.textContent = '已複製，可以貼到 Gemini / ChatGPT / Claude。';
     } catch (err) {
-        if (copyStatus) copyStatus.textContent = '瀏覽器不允許自動複製，請手動選取上方文字複製。';
+        if (copyStatus) copyStatus.textContent = `無法自動載入或複製：${err.message} 請手動選取上方文字複製。`;
     }
 }
 
@@ -340,13 +371,162 @@ function handleImportFileChange(event) {
     reader.readAsText(file, 'utf-8');
 }
 
-function importTimetableCsvText(csvText, fileName) {
+// 掃描原始 CSV，找出 teacher 欄中的明確佔位值。
+// 回傳資料會直接顯示在匯入確認視窗，讓使用者知道原始檔的哪一列需要回頭核對。
+function findPlaceholderTeacherIssues(rows, headers) {
+    const issues = [];
+    const isInternalFormat = headers.includes('teachername');
+
+    rows.forEach(row => {
+        const sourceLine = row.__sourceLine || '';
+
+        if (!isInternalFormat) {
+            const teacher = (row.teacher || '').trim();
+            if (!isExplicitPlaceholderTeacherName(teacher)) return;
+
+            issues.push({
+                line: sourceLine,
+                className: (row.class || '').trim(),
+                day: (row.day || '').trim(),
+                period: (row.period || '').trim(),
+                subject: (row.subject || '').trim(),
+                teacher
+            });
+            return;
+        }
+
+        const teacher = (row.teachername || '').trim();
+        if (!isExplicitPlaceholderTeacherName(teacher)) return;
+
+        let foundCourse = false;
+        for (let day = 1; day <= 5; day++) {
+            for (let period = 0; period <= 9; period++) {
+                const subject = (row[`s${day}${period}`] || '').trim();
+                const className = (row[`c${day}${period}`] || '').trim();
+                if (!subject && !className) continue;
+
+                foundCourse = true;
+                issues.push({
+                    line: sourceLine,
+                    className,
+                    day: String(day),
+                    period: String(period),
+                    subject,
+                    teacher
+                });
+            }
+        }
+
+        if (!foundCourse) {
+            issues.push({
+                line: sourceLine,
+                className: '',
+                day: '',
+                period: '',
+                subject: '',
+                teacher
+            });
+        }
+    });
+
+    return issues;
+}
+
+function formatImportIssueDay(day) {
+    const dayNumber = Number(day);
+    if (Number.isInteger(dayNumber) && dayNumber >= 1 && dayNumber <= 5) {
+        return `星期${DAYS[dayNumber - 1]}`;
+    }
+    return day || '未填';
+}
+
+function formatImportIssuePeriod(period) {
+    const periodNumber = Number(period);
+    if (period === '' || period === null || period === undefined) return '未填';
+    if (periodNumber === 0) return '早自習';
+    if (Number.isInteger(periodNumber)) return `第 ${periodNumber} 節`;
+    return String(period);
+}
+
+function appendImportIssueCell(rowElement, text) {
+    const cell = document.createElement('td');
+    cell.textContent = text || '未填';
+    rowElement.appendChild(cell);
+}
+
+// 顯示所有待確認列，不會在這一步修改或刪除原始 CSV。
+function openImportValidationModal(fileName, issues) {
+    const modal = document.getElementById('importValidationModal');
+    const summary = document.getElementById('importValidationSummary');
+    const issueTableBody = document.getElementById('importValidationRows');
+    if (!modal || !summary || !issueTableBody) return;
+
+    summary.textContent = `「${fileName || 'CSV 檔案'}」共有 ${issues.length} 筆課程使用 UNKNOWN 類待確認教師。請先核對原始課表；若選擇仍然匯入，課程會保留，但這些值不會當成教師姓名。`;
+    issueTableBody.replaceChildren();
+
+    issues.forEach(issue => {
+        const row = document.createElement('tr');
+        appendImportIssueCell(row, String(issue.line || ''));
+        appendImportIssueCell(row, issue.className);
+        appendImportIssueCell(row, formatImportIssueDay(issue.day));
+        appendImportIssueCell(row, formatImportIssuePeriod(issue.period));
+        appendImportIssueCell(row, issue.subject);
+        appendImportIssueCell(row, issue.teacher);
+        issueTableBody.appendChild(row);
+    });
+
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeImportValidationModal() {
+    const modal = document.getElementById('importValidationModal');
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+}
+
+// 取消後保留使用者原本的檔案，不寫入 localStorage，也不改動目前正在使用的課表。
+function cancelPendingTimetableImport() {
+    pendingTimetableImport = null;
+    closeImportValidationModal();
+    setImportStatus('已取消匯入。請依上方列出的班級、星期、節次與科目修正 CSV 後再重新匯入。', 'warning');
+}
+
+// 使用者明確確認後才繼續；UNKNOWN 類值會轉成內部未指定教師鍵，課程本身仍會保留。
+function confirmPendingTimetableImport() {
+    if (!pendingTimetableImport) return;
+
+    const pendingImport = pendingTimetableImport;
+    pendingTimetableImport = null;
+    closeImportValidationModal();
+
+    try {
+        importTimetableCsvText(pendingImport.csvText, pendingImport.fileName, true);
+    } catch (err) {
+        setImportStatus(`匯入失敗：${err.message}`, 'danger');
+    }
+}
+
+function importTimetableCsvText(csvText, fileName, allowPlaceholderTeachers = false) {
     const parsedRows = parseCSVKeepAllRows(csvText);
     if (parsedRows.length === 0) {
         throw new Error('CSV 沒有可用資料列。');
     }
 
     const headers = Object.keys(parsedRows[0]);
+    const placeholderIssues = findPlaceholderTeacherIssues(parsedRows, headers);
+    if (placeholderIssues.length > 0 && !allowPlaceholderTeachers) {
+        pendingTimetableImport = {
+            csvText,
+            fileName,
+            issues: placeholderIssues
+        };
+        openImportValidationModal(fileName, placeholderIssues);
+        setImportStatus(`發現 ${placeholderIssues.length} 筆 UNKNOWN 類待確認教師，尚未匯入。請查看問題明細。`, 'warning');
+        return false;
+    }
+
     const importedSchoolName = extractSchoolNameFromRows(parsedRows);
     let internalCsvText = csvText;
     let importedRows = [];
@@ -383,7 +563,12 @@ function importTimetableCsvText(csvText, fileName) {
     updateStartSchoolName(importedSchoolName);
 
     const importedSchoolText = importedSchoolName ? `，學校名稱：${importedSchoolName}` : '，未讀到學校名稱';
-    setImportStatus(`已匯入「${fileName || 'CSV 檔案'}」${importedSchoolText}，資料已儲存在此瀏覽器。`, 'info');
+    if (placeholderIssues.length > 0) {
+        setImportStatus(`已依你的確認匯入「${fileName || 'CSV 檔案'}」${importedSchoolText}；保留 ${placeholderIssues.length} 筆待確認課程，但不會把 UNKNOWN 類值列為教師。`, 'warning');
+    } else {
+        setImportStatus(`已匯入「${fileName || 'CSV 檔案'}」${importedSchoolText}，資料已儲存在此瀏覽器。`, 'info');
+    }
+    return true;
 }
 
 function enterScheduleSearch() {
@@ -467,18 +652,30 @@ function parseCSV(text) {
 
 function parseCSVKeepAllRows(text) {
     text = text.replace(/^﻿/, '');
-    const lines = text.replace(/\r/g, '').split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+    const lines = text.replace(/\r/g, '').split('\n');
+    const headerLineIndex = lines.findIndex(line => line.trim());
+    if (headerLineIndex < 0) return [];
 
-    const headers = splitCSVLine(lines[0]).map(header => header.trim());
-    return lines.slice(1).map(line => {
+    const headers = splitCSVLine(lines[headerLineIndex]).map(header => header.trim());
+    const rows = [];
+
+    for (let lineIndex = headerLineIndex + 1; lineIndex < lines.length; lineIndex++) {
+        const line = lines[lineIndex];
+        if (!line.trim()) continue;
+
         const values = splitCSVLine(line);
         const row = {};
         headers.forEach((header, index) => {
             row[header] = (values[index] || '').trim();
         });
-        return row;
-    });
+        Object.defineProperty(row, '__sourceLine', {
+            value: lineIndex + 1,
+            enumerable: false
+        });
+        rows.push(row);
+    }
+
+    return rows;
 }
 
 function hasSimpleTimetableHeaders(headers) {
@@ -514,15 +711,32 @@ function createEmptyTeacherRow(teacherName) {
 // 用來標記「這一列沒有真正授課老師」的教師主鍵前綴。
 // 帶這個前綴的教師（以及空白、UNKNOWN 等）都視為佔位，不會出現在教師相關的下拉選單裡。
 const PLACEHOLDER_TEACHER_PREFIX = '（未指定教師）';
+const EXPLICIT_PLACEHOLDER_TEACHERS = new Set([
+    'UNKNOWN',
+    'UNKNOW',
+    'N/A',
+    'NA',
+    'NULL',
+    'NONE',
+    '未知',
+    '無',
+    '待確認',
+    '查無資料'
+]);
+
+// 只有明確寫出的佔位文字才需要在匯入前警告；真正空白的 teacher 不在此列。
+function isExplicitPlaceholderTeacherName(name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return false;
+    return EXPLICIT_PLACEHOLDER_TEACHERS.has(trimmed.toUpperCase());
+}
 
 // 判斷某個教師姓名是不是「佔位值」：空白、UNKNOWN，或我們自己產生的未指定教師鍵。
 // 佔位教師代表這堂課查不到真正老師，多半是全校性活動或 AI 無法辨識的情況。
 function isPlaceholderTeacherName(name) {
     const trimmed = (name || '').trim();
     if (trimmed === '') return true;
-    const upper = trimmed.toUpperCase();
-    if (upper === 'UNKNOWN' || upper === 'N/A' || upper === 'NA') return true;
-    if (trimmed === '未知' || trimmed === '無' || trimmed === '待確認') return true;
+    if (isExplicitPlaceholderTeacherName(trimmed)) return true;
     return trimmed.startsWith(PLACEHOLDER_TEACHER_PREFIX);
 }
 
@@ -1149,7 +1363,13 @@ document.addEventListener('DOMContentLoaded', () => {
     updateBackBtn();
     const promptText = document.getElementById('promptTemplateText');
     if (promptText) {
-        promptText.value = AI_PROMPT_TEMPLATE;
+        loadAiPromptTemplate()
+            .then(prompt => {
+                promptText.value = prompt;
+            })
+            .catch(() => {
+                promptText.value = '';
+            });
     }
 
     const storedName = localStorage.getItem(LOCAL_TIMETABLE_NAME_KEY);
@@ -1165,13 +1385,21 @@ document.addEventListener('DOMContentLoaded', () => {
 document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
         closeTemplateModal();
+        if (pendingTimetableImport) {
+            cancelPendingTimetableImport();
+        }
     }
 });
 
 document.addEventListener('click', (event) => {
-    const modal = document.getElementById('templateModal');
-    if (modal && event.target === modal) {
+    const templateModal = document.getElementById('templateModal');
+    if (templateModal && event.target === templateModal) {
         closeTemplateModal();
+    }
+
+    const importValidationModal = document.getElementById('importValidationModal');
+    if (importValidationModal && event.target === importValidationModal) {
+        cancelPendingTimetableImport();
     }
 });
 

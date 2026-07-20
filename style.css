@@ -437,6 +437,58 @@ html:not(.dark) .moon-icon {
     font-size: 0.88rem;
 }
 
+/* ── CSV 匯入資料品質檢查彈窗 ─────────────────────────────── */
+.import-validation-modal-card {
+    width: min(960px, 100%);
+    max-height: 90vh;
+    padding: 1.25rem;
+    overflow: hidden;
+}
+.import-validation-summary {
+    margin: 0 0 1rem;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+    line-height: 1.65;
+}
+.import-issue-table-wrapper {
+    max-height: 52vh;
+    overflow: auto;
+    border: 1px solid var(--card-bdr);
+    border-radius: 0.5rem;
+}
+.import-issue-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    color: var(--text-primary);
+    font-size: 0.84rem;
+}
+.import-issue-table th,
+.import-issue-table td {
+    padding: 0.65rem 0.75rem;
+    border-bottom: 1px solid var(--card-bdr);
+    text-align: left;
+    vertical-align: top;
+}
+.import-issue-table th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--app-page-bg);
+    color: var(--text-secondary);
+    font-weight: 600;
+    white-space: nowrap;
+}
+.import-issue-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+.import-validation-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
 /* ?? ??蝺?????????????????????????????????????????????????? */
 .divider {
     display: flex;
@@ -843,6 +895,19 @@ html.dark .cell-link {
     .template-modal-card {
         max-height: 92vh;
         padding: 1rem;
+    }
+    .import-validation-modal-card {
+        max-height: 92vh;
+        padding: 1rem;
+    }
+    .import-issue-table-wrapper {
+        max-height: 48vh;
+    }
+    .import-validation-actions {
+        flex-direction: column;
+    }
+    .import-validation-actions .btn {
+        width: 100%;
     }
     .prompt-template {
         min-height: 300px;
