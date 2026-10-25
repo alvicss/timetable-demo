@@ -31,3 +31,6 @@ timetable_import*.csv
 # 本機真實課表資料與 CSV 匯入/範例檔，不進版控
 homerooms_*.json
 timetable_*.csv
+
+# 老師審核用的課表資料（可能含老師個資，不進版控）
+teacher_review*.csv
