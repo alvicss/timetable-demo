@@ -82,6 +82,5 @@ http://localhost:8000/
 
 ## 作品圖與分享預覽（2026-10-26）
 
-- 作品圖：`cover.jpg`（1200×630），由 Codex 用 halfmemo-pencil-og-safe-zone 作品模式產生（色鉛筆、無標題）；部落格放一份 960×504 的縮小版 `public/images/works/timetable.jpg`。
-- 子站 `site/timetable/cover.jpg` 用它；`index.html` 的 `<head>` 加了社群分享預覽設定。
-- 作品圖要重做：在 `D:\ASTRO` 開 Codex，貼「用 $halfmemo-pencil-og-safe-zone 產作品圖：D:\workshop\lab\timetable」，好了跟 Claude 說「XX 圖好了」。
+- 作品圖：`cover.jpg`（1200×630，色鉛筆、無標題），lab 站作品卡片與社群分享圖都用它（部落格放 960×504 的縮小版）；`index.html` 的 `<head>` 加了社群分享預覽設定。
+- 作品圖要重做：跟 Claude 說「重做課表查詢系統的圖」。
